@@ -1,0 +1,64 @@
+pipeline {
+
+agent any
+
+environment {
+DOCKERHUB_REPO = "dockerhubusername/trend-app"
+}
+
+stages {
+
+stage('Clone Repo') {
+steps {
+git 'https://github.com/yourusername/trend-devops-project.git'
+}
+}
+
+stage('Build Docker Image') {
+steps {
+sh """
+docker build -t $DOCKERHUB_REPO:$BUILD_NUMBER .
+"""
+}
+}
+
+stage('Push Docker Image') {
+steps {
+
+withCredentials([usernamePassword(credentialsId: 'dockerhub',
+usernameVariable: 'USER',
+passwordVariable: 'PASS')]) {
+
+sh """
+echo $PASS | docker login -u $USER --password-stdin
+docker push $DOCKERHUB_REPO:$BUILD_NUMBER
+"""
+}
+
+}
+}
+
+stage('Update Deployment File') {
+steps {
+
+sh """
+sed -i 's|DOCKER_IMAGE|$DOCKERHUB_REPO:$BUILD_NUMBER|g' k8s/deployment.yaml
+"""
+
+}
+}
+
+stage('Deploy to Kubernetes') {
+steps {
+
+sh """
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+"""
+
+}
+}
+
+}
+
+}
