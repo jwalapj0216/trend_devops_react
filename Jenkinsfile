@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "jwalapj02/app"
-        TAG = "latest"
+        TAG = "${BUILD_NUMBER}"
     }
 
     stages {
