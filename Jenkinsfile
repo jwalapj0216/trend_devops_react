@@ -35,11 +35,13 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
-            steps {
+       stage('Deploy to Kubernetes') {
+        steps {
+            // This tells Jenkins to move into the 'kubernetes' folder before running commands
+            dir('kubernetes') {
                 sh '''
-                kubectl apply -f deployment.yaml
-                kubectl apply -f service.yaml
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
                 '''
             }
         }
