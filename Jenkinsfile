@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/jwalapj0216/trend_devops_react.git'
@@ -35,14 +34,15 @@ pipeline {
             }
         }
 
-       stage('Deploy to Kubernetes') {
-        steps {
-            // This tells Jenkins to move into the 'kubernetes' folder before running commands
-            dir('kubernetes') {
-                sh '''
+        stage('Deploy to Kubernetes') {
+            steps {
+                // Moving execution context into the kubernetes folder
+                dir('kubernetes') {
+                    sh '''
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
-                '''
+                    '''
+                }
             }
         }
     }
