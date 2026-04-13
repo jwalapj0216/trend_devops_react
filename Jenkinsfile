@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "t/app"
+        IMAGE_NAME = "jwalapj02/app"
         TAG = "latest"
     }
 
@@ -10,7 +10,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: '<repo-url>'
+                git branch: 'main', url: 'https://github.com/jwalapj0216/trend_devops_react.git'
             }
         }
 
