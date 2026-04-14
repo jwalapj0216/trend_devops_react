@@ -43,7 +43,7 @@ The project contain 2 part one is - infra setup for the server - Trend git appli
 
 #### Kubernetes
 eksctl create cluster \
---name trend-cluster-final \
+--name trendfinal-cluster \
 --region us-east-1 \
 --nodegroup-name trend-nodes \
 --node-type t3.medium \
@@ -52,9 +52,9 @@ eksctl create cluster \
 --nodes-max 3 \
 --managed
 
-aws eks --region us-east-1 update-kubeconfig --name trend-cluster-final
+aws eks --region us-east-1 update-kubeconfig --name trendfinal-cluster
 
-sudo -u jenkins aws eks --region us-east-1 update-kubeconfig --name trend-cluster-final
+sudo -u jenkins aws eks --region us-east-1 update-kubeconfig --name trendfinal-cluster
 
 sudo su - jenkins
 kubectl get nodes
