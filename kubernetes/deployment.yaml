@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        app: app
+        app: trend
     spec:
       containers:
       - name: app
