@@ -1,4 +1,13 @@
-# VPC creation
+provider "aws" {
+  region = "us-east-1"
+}
+
+# Get available AZs dynamically
+data "aws_availability_zones" "available" {}
+
+# -----------------------------
+# VPC
+# -----------------------------
 resource "aws_vpc" "dev_vpc" {
   cidr_block = var.vpc_cidr
 
@@ -7,22 +16,23 @@ resource "aws_vpc" "dev_vpc" {
   }
 }
 
-# Subnet creation
+# -----------------------------
+# Subnet
+# -----------------------------
 resource "aws_subnet" "dev_subnet" {
-
-  vpc_id            = aws_vpc.dev_vpc.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
-
+  vpc_id                  = aws_vpc.dev_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
 
   tags = {
     Name = "dev-public-subnet"
   }
-
 }
 
-# Internet Gateway creation
+# -----------------------------
+# Internet Gateway
+# -----------------------------
 resource "aws_internet_gateway" "dev_igw" {
   vpc_id = aws_vpc.dev_vpc.id
 
@@ -31,7 +41,9 @@ resource "aws_internet_gateway" "dev_igw" {
   }
 }
 
-#route table creation
+# -----------------------------
+# Route Table
+# -----------------------------
 resource "aws_route_table" "dev_route_table" {
   vpc_id = aws_vpc.dev_vpc.id
 
@@ -44,27 +56,40 @@ resource "aws_route_table" "dev_route_table" {
     Name = "dev-route-table"
   }
 }
-#route table association
+
+# Route Table Association
 resource "aws_route_table_association" "dev_route_table_assoc" {
   subnet_id      = aws_subnet.dev_subnet.id
   route_table_id = aws_route_table.dev_route_table.id
 }
 
-#security group creation
+# -----------------------------
+# Security Group
+# -----------------------------
 resource "aws_security_group" "jenkins_sg" {
   name   = "jenkins-sg"
   vpc_id = aws_vpc.dev_vpc.id
 
   ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Change to your IP for security
+  }
+
+  ingress {
+    description = "Jenkins UI"
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port   = 8080
-    to_port     = 8080
+    description = "NodePort (K8s optional)"
+    from_port   = 30000
+    to_port     = 32767
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -77,7 +102,9 @@ resource "aws_security_group" "jenkins_sg" {
   }
 }
 
-# IAM role for EC2 instance
+# -----------------------------
+# IAM Role for EC2 (Jenkins)
+# -----------------------------
 resource "aws_iam_role" "ec2_role" {
   name = "jenkins-ec2-role"
 
@@ -95,31 +122,32 @@ resource "aws_iam_role" "ec2_role" {
   })
 }
 
-# IAM policy attachment for EC2 role
+# Attach FULL ACCESS (important for EKS + kubectl)
+resource "aws_iam_role_policy_attachment" "admin_access" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Instance Profile
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "jenkins-instance-profile"
   role = aws_iam_role.ec2_role.name
 }
 
-# jenkins Instalation in EC2
-
-
+# -----------------------------
+# EC2 Instance (Jenkins Server)
+# -----------------------------
 resource "aws_instance" "jenkins_server" {
-
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  subnet_id     = aws_subnet.dev_subnet.id
-
-  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
-
-  key_name = "aws-new-dev"
-
-  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.dev_subnet.id
+  vpc_security_group_ids      = [aws_security_group.jenkins_sg.id]
+  key_name                    = "aws-new-dev"
+  iam_instance_profile        = aws_iam_instance_profile.ec2_profile.name
   associate_public_ip_address = true
 
   user_data = file("${path.module}/install_jenkins.sh")
-  # Storage configuration
+
   root_block_device {
     volume_type           = "gp3"
     volume_size           = 25
@@ -131,9 +159,10 @@ resource "aws_instance" "jenkins_server" {
   }
 }
 
-
+# -----------------------------
+# Ubuntu AMI
+# -----------------------------
 data "aws_ami" "ubuntu" {
-
   most_recent = true
   owners      = ["099720109477"]
 
