@@ -1,6 +1,10 @@
 pipeline {
     agent any
-    
+
+    options {
+        timeout(time: 15, unit: 'MINUTES')
+    }
+
     environment {
         IMAGE_NAME = "jwalapj02/app"
         TAG = "${BUILD_NUMBER}"
@@ -37,33 +41,53 @@ pipeline {
             }
         }
 
+        stage('Update Kubernetes Manifest') {
+            steps {
+                dir('kubernetes') {
+                    sh '''
+                    # Replace IMAGE_TAG with build number
+                    sed -i "s|IMAGE_TAG|$TAG|g" deployment.yaml
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to Kubernetes') {
             steps {
                 dir('kubernetes') {
                     sh '''
-                    # Ensure kubeconfig is correct
-                    kubectl get nodes
+                    # Clean old broken resources
+                    kubectl delete deployment app-deployment || true
+                    kubectl delete service trend-service || true
 
-                    # Apply base manifests (only first time needed)
+                    # Apply new configs
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
 
-                    # Update image WITHOUT deleting deployment
-                    kubectl set image deployment/app-deployment \
-                    trend-container=$IMAGE_NAME:$TAG
+                    # Force correct image (extra safety)
+                    kubectl set image deployment/app-deployment trend-container=$IMAGE_NAME:$TAG
 
-                    # Wait for rollout to complete
-                    kubectl rollout status deployment/app-deployment --timeout=60s || echo "Rollout taking time"
+                    # Check rollout (with timeout)
+                    kubectl rollout status deployment/app-deployment --timeout=120s
                     '''
                 }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                kubectl get pods -l app=trend
+                kubectl get svc trend-service
+                '''
             }
         }
 
         stage('Cleanup') {
             steps {
                 sh '''
-                # Clean only unused images (not everything)
-                docker image prune -af
+                # Safe cleanup (do NOT delete all images)
+                docker image prune -f
                 '''
             }
         }
@@ -75,4 +99,3 @@ pipeline {
         }
     }
 }
-
