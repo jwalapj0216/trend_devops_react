@@ -31,12 +31,14 @@ The project contain 2 part one is - infra setup for the server - Trend git appli
 4. add credidentials like docker-cred and git-cred to the credentials
 
    ###### Set up docker
-   sudo apt update
-   sudo apt install docker.io -y
-   sudo systemctl start docker
-   sudo systemctl enable docker
-   sudo usermod -aG docker jenkins
-   sudo systemctl restart jenkins
+   ```sh
+      sudo apt update
+      sudo apt install docker.io -y
+      sudo systemctl start docker
+      sudo systemctl enable docker
+      sudo usermod -aG docker jenkins
+      sudo systemctl restart jenkins
+   ```
 
 
 #### Kubernetes
