@@ -7,5 +7,5 @@ spec:
   selector:
     app: trend
   ports:
-  - port: 80
-    targetPort: 3000
+    - port: 80          # external
+      targetPort: 3000  # container
