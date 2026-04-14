@@ -39,6 +39,7 @@ pipeline {
                 // Moving execution context into the kubernetes folder
                 dir('kubernetes') {
                     sh '''
+                    kubectl delete deployment app-deployment || true
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
                     '''
