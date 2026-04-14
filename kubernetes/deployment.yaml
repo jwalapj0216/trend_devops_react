@@ -2,22 +2,49 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app-deployment
+
 spec:
   replicas: 2
 
   selector:
     matchLabels:
-      app: trend   # MUST match below
+      app: trend
 
   template:
     metadata:
       labels:
-        app: trend   # MUST match above
+        app: trend
 
     spec:
       containers:
-      - name: trend-container
-        image: jwalapj02/app:1
-        ports:
-        - containerPort: 80
-        imagePullPolicy: Always
+        - name: trend-container
+          image: jwalapj02/app:IMAGE_TAG
+          
+          ports:
+            - containerPort: 3000
+
+          imagePullPolicy: Always
+
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
