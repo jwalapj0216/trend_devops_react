@@ -1,15 +1,23 @@
-# Use lightweight nginx image
+# Stage 1: Build (IMPORTANT for Jenkins)
+FROM node:18 AS build
+
+WORKDIR /app
+COPY . .
+
+RUN npm install
+RUN npm run build   # creates dist/
+
+# Stage 2: Nginx
 FROM nginx:alpine
 
-# Remove default nginx static files
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy build files
-COPY dist/ /usr/share/nginx/html/
+# Copy built files from build stage
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# 🔥 Copy custom nginx config
+# Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
