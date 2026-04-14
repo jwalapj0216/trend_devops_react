@@ -1,7 +1,6 @@
 pipeline {
 agent any
-
-```
+    
 environment {
     IMAGE_NAME = "jwalapj02/app"
     TAG = "${BUILD_NUMBER}"
@@ -81,7 +80,6 @@ post {
         cleanWs()
     }
 }
-```
 
 }
 
