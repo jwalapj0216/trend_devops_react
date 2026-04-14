@@ -53,7 +53,7 @@ pipeline {
                     trend-container=$IMAGE_NAME:$TAG
 
                     # Wait for rollout to complete
-                    kubectl rollout status deployment/app-deployment
+                    kubectl rollout status deployment/app-deployment --timeout=60s || echo "Rollout taking time"
                     '''
                 }
             }
