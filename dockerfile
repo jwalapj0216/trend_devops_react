@@ -4,11 +4,12 @@ FROM nginx:alpine
 # Remove default nginx static files
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy your React build (dist folder) to nginx html directory
+# Copy build files
 COPY dist/ /usr/share/nginx/html/
 
-# Expose port 80
-EXPOSE 80
+# 🔥 Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Start nginx
+EXPOSE 3000
+
 CMD ["nginx", "-g", "daemon off;"]
